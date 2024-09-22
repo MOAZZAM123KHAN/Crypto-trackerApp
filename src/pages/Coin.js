@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import Info from "../components/CoinPage/Info";
 import LineChart from "../components/CoinPage/LineChart";
@@ -22,13 +22,8 @@ function Coin() {
   const [days, setDays] = useState(30);
   const [priceType, setPriceType] = useState("prices");
 
-  useEffect(() => {
-    if (id) {
-      getData();
-    }
-  }, [id]);
-
-  const getData = async () => {
+  // Memoizing the getData function to prevent recreation on every render
+  const getData = useCallback(async () => {
     setLoading(true);
     let coinData = await getCoinData(id, setError);
     console.log("Coin DATA>>>>", coinData);
@@ -40,7 +35,13 @@ function Coin() {
         setLoading(false);
       }
     }
-  };
+  }, [id, days, priceType]);
+
+  useEffect(() => {
+    if (id) {
+      getData();
+    }
+  }, [id, getData]);
 
   const handleDaysChange = async (event) => {
     setLoading(true);

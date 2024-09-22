@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import Info from "../components/CoinPage/Info";
 import LineChart from "../components/CoinPage/LineChart";
 import ToggleComponents from "../components/CoinPage/ToggleComponent";
@@ -15,13 +15,10 @@ import { settingCoinObject } from "../functions/settingCoinObject";
 function Compare() {
   const [allCoins, setAllCoins] = useState([]);
   const [loading, setLoading] = useState(false);
-  // id states
   const [crypto1, setCrypto1] = useState("bitcoin");
   const [crypto2, setCrypto2] = useState("ethereum");
-  // data states
   const [coin1Data, setCoin1Data] = useState({});
   const [coin2Data, setCoin2Data] = useState({});
-  // days state
   const [days, setDays] = useState(30);
   const [priceType, setPriceType] = useState("prices");
   const [chartData, setChartData] = useState({
@@ -29,11 +26,8 @@ function Compare() {
     datasets: [],
   });
 
-  useEffect(() => {
-    getData();
-  }, []);
-
-  const getData = async () => {
+  // Memoize getData using useCallback
+  const getData = useCallback(async () => {
     setLoading(true);
     const coins = await get100Coins();
     if (coins) {
@@ -43,36 +37,34 @@ function Compare() {
       settingCoinObject(data1, setCoin1Data);
       settingCoinObject(data2, setCoin2Data);
       if (data1 && data2) {
-        // getPrices
         const prices1 = await getPrices(crypto1, days, priceType);
         const prices2 = await getPrices(crypto2, days, priceType);
         settingChartData(setChartData, prices1, prices2);
         setLoading(false);
       }
     }
-  };
+  }, [crypto1, crypto2, days, priceType]);
+
+  // Add getData as a dependency in useEffect
+  useEffect(() => {
+    getData();
+  }, [getData]);
 
   const onCoinChange = async (e, isCoin2) => {
     setLoading(true);
     if (isCoin2) {
       const newCrypto2 = e.target.value;
-      // crypto2 is being changed
       setCrypto2(newCrypto2);
-      // fetch coin2 data
       const data2 = await getCoinData(newCrypto2);
       settingCoinObject(data2, setCoin2Data);
-      // fetch prices again
       const prices1 = await getPrices(crypto1, days, priceType);
       const prices2 = await getPrices(newCrypto2, days, priceType);
       settingChartData(setChartData, prices1, prices2);
     } else {
       const newCrypto1 = e.target.value;
-      // crypto1 is being changed
       setCrypto1(newCrypto1);
-      // fetch coin1 data
       const data1 = await getCoinData(newCrypto1);
       settingCoinObject(data1, setCoin1Data);
-      // fetch coin prices
       const prices1 = await getPrices(newCrypto1, days, priceType);
       const prices2 = await getPrices(crypto2, days, priceType);
       settingChartData(setChartData, prices1, prices2);
